@@ -1,4 +1,4 @@
-FROM frolvlad/alpine-oraclejdk8
+FROM davidcaste/alpine-java-unlimited-jce:jdk8
 MAINTAINER Levon.yao <levon.yao@linksame.cn>, Linksame Team
 
 
@@ -114,49 +114,24 @@ RUN set -ex \
      && mv ./apache-maven-3.3.9 /usr/share/maven \
      && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
-RUN apk add --no-cache bash gawk sed grep bc coreutils wget curl gpgme
+ENV TOMCAT_MAJOR=8 \
+    TOMCAT_VERSION=8.5.3 \
+    TOMCAT_HOME=/opt/tomcat \
+    CATALINA_HOME=/opt/tomcat \
+    CATALINA_OUT=/dev/null
 
-ENV TOMCAT_MAJOR 8
-ENV TOMCAT_VERSION 8.5.14
-ENV TOMCAT_TGZ_URL https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
+RUN apk upgrade --update && \
+    apk add --update curl && \
+    curl -jksSL -o /tmp/apache-tomcat.tar.gz http://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
+    gunzip /tmp/apache-tomcat.tar.gz && \
+    tar -C /opt -xf /tmp/apache-tomcat.tar && \
+    ln -s /opt/apache-tomcat-${TOMCAT_VERSION} ${TOMCAT_HOME} && \
+    rm -rf ${TOMCAT_HOME}/webapps/* && \
+    apk del curl && \
+    rm -rf /tmp/* /var/cache/apk/*
 
-ENV CATALINA_HOME /usr/local/apache-tomcat-$TOMCAT_VERSION
-ENV PATH $CATALINA_HOME/bin:$PATH
-#WORKDIR $CATALINA_HOME
+COPY logging.properties ${TOMCAT_HOME}/conf/logging.properties
+COPY server.xml ${TOMCAT_HOME}/conf/server.xml
 
-# see https://www.apache.org/dist/tomcat/tomcat-8/KEYS
-RUN set -ex \
-	&& for key in \
-		05AB33110949707C93A279E3D3EFE6B686867BA6 \
-		07E48665A34DCAFAE522E5E6266191C37C037D42 \
-		47309207D818FFD8DCD3F83F1931D684307A10A5 \
-		541FBE7D8F78B25E055DDEE13C370389288584E7 \
-		61B832AC2F1C5A90F0F9B00A1C506407564C17A3 \
-		79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED \
-		9BA44C2621385CB966EBA586F72C284D731FABEE \
-		A27677289986DB50844682F8ACB77FC2E86E29AC \
-		A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 \
-		DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 \
-		F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE \
-		F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23 \
-	; do \
-		gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-	done
-
-RUN set -x \
-	\
-	&& cd /usr/local \
-	&& curl -fSL "$TOMCAT_TGZ_URL" -o tomcat.tar.gz \
-	&& curl -fSL "$TOMCAT_TGZ_URL.asc" -o tomcat.tar.gz.asc \
-	&& gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz \
-	&& tar xvfz tomcat.tar.gz \
-#	&& rm -rf $CATALINA_HOME/webapps/* \
-	&& rm -rf $CATALINA_HOME/bin/*.bat \
-	&& chmod +x $CATALINA_HOME/bin/catalina.sh
-
-WORKDIR $CATALINA_HOME
-
-VOLUME [$CATALINA_HOME/webapps]
-
+VOLUME ["/logs"]
 EXPOSE 8080
-ENTRYPOINT ["bin/catalina.sh", "run"]

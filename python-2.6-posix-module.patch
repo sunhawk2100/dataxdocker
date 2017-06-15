@@ -1,0 +1,29 @@
+--- ./Modules/posixmodule.c.orig
++++ ./Modules/posixmodule.c
+@@ -3896,7 +3896,7 @@
+ #endif
+     gid_t grouplist[MAX_GROUPS];
+ 
+-    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results 
++    /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
+      * This is a helper variable to store the intermediate result when
+      * that happens.
+      *
+@@ -6357,7 +6357,7 @@
+ Close a file descriptor (for low level IO).");
+ 
+ static PyObject *
+-posix_close(PyObject *self, PyObject *args)
++posix_closex(PyObject *self, PyObject *args)
+ {
+     int fd, res;
+     if (!PyArg_ParseTuple(args, "i:close", &fd))
+@@ -8602,7 +8602,7 @@
+     {"tcsetpgrp",       posix_tcsetpgrp, METH_VARARGS, posix_tcsetpgrp__doc__},
+ #endif /* HAVE_TCSETPGRP */
+     {"open",            posix_open, METH_VARARGS, posix_open__doc__},
+-    {"close",           posix_close, METH_VARARGS, posix_close__doc__},
++    {"close",           posix_closex, METH_VARARGS, posix_close__doc__},
+     {"closerange",      posix_closerange, METH_VARARGS, posix_closerange__doc__},
+     {"dup",             posix_dup, METH_VARARGS, posix_dup__doc__},
+     {"dup2",            posix_dup2, METH_VARARGS, posix_dup2__doc__},

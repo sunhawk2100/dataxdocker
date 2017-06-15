@@ -1,0 +1,25 @@
+--- a/setup.py
++++ b/setup.py
+@@ -1035,18 +1035,15 @@
+         #
+         # More information on Expat can be found at www.libexpat.org.
+         #
+-        expatinc = os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')
+-        define_macros = [
+-            ('HAVE_EXPAT_CONFIG_H', '1'),
+-        ]
++        # Use system expat
++        expatinc = '/usr/include'
++        define_macros = []
+
+         exts.append(Extension('pyexpat',
+                               define_macros = define_macros,
+                               include_dirs = [expatinc],
++                              libraries = ['expat'],
+                               sources = ['pyexpat.c',
+-                                         'expat/xmlparse.c',
+-                                         'expat/xmlrole.c',
+-                                         'expat/xmltok.c',
+                                          ],
+                               ))
+

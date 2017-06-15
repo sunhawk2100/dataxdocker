@@ -1,4 +1,4 @@
-FROM davidcaste/alpine-java-unlimited-jce:jdk8
+FROM anapsix/alpine-java:jdk8
 MAINTAINER Levon.yao <levon.yao@linksame.cn>, Linksame Team
 
 
@@ -114,24 +114,45 @@ RUN set -ex \
      && mv ./apache-maven-3.3.9 /usr/share/maven \
      && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
-ENV TOMCAT_MAJOR=8 \
-    TOMCAT_VERSION=8.5.3 \
-    TOMCAT_HOME=/opt/tomcat \
-    CATALINA_HOME=/opt/tomcat \
-    CATALINA_OUT=/dev/null
+RUN apk add --update openssl && \
+    rm -rf /var/cache/apk/* /tmp/*
 
-RUN apk upgrade --update && \
-    apk add --update curl && \
-    curl -jksSL -o /tmp/apache-tomcat.tar.gz http://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
-    gunzip /tmp/apache-tomcat.tar.gz && \
-    tar -C /opt -xf /tmp/apache-tomcat.tar && \
-    ln -s /opt/apache-tomcat-${TOMCAT_VERSION} ${TOMCAT_HOME} && \
-    rm -rf ${TOMCAT_HOME}/webapps/* && \
-    apk del curl && \
-    rm -rf /tmp/* /var/cache/apk/*
+# set version info for desired tomcat version
+ENV TC_MAJOR 8
+ENV TC_VERSION 8.0.44
 
-COPY logging.properties ${TOMCAT_HOME}/conf/logging.properties
-COPY server.xml ${TOMCAT_HOME}/conf/server.xml
+# calculate download url
+ENV TC_URL https://www.apache.org/dist/tomcat/tomcat-$TC_MAJOR/v$TC_VERSION/bin/apache-tomcat-$TC_VERSION.tar.gz
 
-VOLUME ["/logs"]
-EXPOSE 8080
+# download and verify tomcat
+WORKDIR /opt
+RUN wget $TC_URL && \
+	wget $TC_URL.sha1 && \
+	sha1sum -cw apache-tomcat-$TC_VERSION.tar.gz.sha1
+
+# install tomcat to /opt/apache-tomcat
+RUN	tar -xzf apache-tomcat-$TC_VERSION.tar.gz && \
+	mv apache-tomcat-$TC_VERSION apache-tomcat
+
+# remove unnecessary components
+RUN	rm -f apache-tomcat/bin/*.bat && \
+	rm -rf apache-tomcat/webapps/docs && \
+	rm -rf apache-tomcat/webapps/examples && \
+	rm -rf apache-tomcat/webapps/manager && \
+	rm -rf apache-tomcat/webapps/host-manager && \
+	rm -f apache-tomcat-$TC_VERSION.*
+
+#improve tomcat startup performance by setting non blocking random generator
+RUN echo "CATALINA_OPTS=-Djava.security.egd=file:/dev/./urandom" > apache-tomcat/bin/setenv.sh && \
+	chmod a+x apache-tomcat/bin/setenv.sh
+
+WORKDIR /opt/apache-tomcat
+
+# add volume for webapps folder
+VOLUME /opt/apache-tomcat/webapps
+
+# expose http and jmx ports
+EXPOSE 8080 
+
+# run tomcat by default
+CMD ["/opt/apache-tomcat/bin/catalina.sh", "run"]

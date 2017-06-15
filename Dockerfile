@@ -120,15 +120,11 @@ ENV TOMCAT_MAJOR 8
 ENV TOMCAT_VERSION 8.5.14
 ENV TOMCAT_TGZ_URL https://www.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
 
-ENV CATALINA_HOME /usr/local/tomcat
+ENV CATALINA_HOME /usr/local/apache-tomcat-$TOMCAT_VERSION
 ENV PATH $CATALINA_HOME/bin:$PATH
-RUN mkdir -p "$CATALINA_HOME"
-WORKDIR $CATALINA_HOME
+#WORKDIR $CATALINA_HOME
 
-# let "Tomcat Native" live somewhere isolated
-ENV TOMCAT_NATIVE_LIBDIR $CATALINA_HOME/native-jni-lib
-ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
-
+# see https://www.apache.org/dist/tomcat/tomcat-8/KEYS
 RUN set -ex \
 	&& for key in \
 		05AB33110949707C93A279E3D3EFE6B686867BA6 \

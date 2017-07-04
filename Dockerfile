@@ -152,7 +152,7 @@ WORKDIR /opt/apache-tomcat
 VOLUME /opt/apache-tomcat/webapps
 
 # expose http and jmx ports
-EXPOSE 80
+EXPOSE 8080
 
 # run tomcat by default
 CMD ["/opt/apache-tomcat/bin/catalina.sh", "run"]
